@@ -20,7 +20,7 @@ module Network.Ethereum.Web3.Types.EtherUnit
 
 import Prelude
 
-import Foreign.Class (class Decode, class Encode, encode)
+import Foreign.Class (class Decode, class Encode)
 import Data.Maybe (fromJust)
 import Data.Module (class LeftModule, (^*))
 import Network.Ethereum.Core.BigNumber (BigNumber, decimal, floorBigNumber, parseBigNumber, divide)
@@ -37,8 +37,8 @@ derive newtype instance showValue :: Show (Value a)
 
 derive newtype instance encodeValue ::  Encode (Value a)
 
-instance encodeNoPay :: Encode (Value NoPay) where
-  encode _ = encode (Value zero)
+--instance encodeNoPay :: Encode (Value NoPay) where
+--  encode _ = encode (Value zero)
 
 derive newtype instance decodeValue ::  Decode (Value a)
 

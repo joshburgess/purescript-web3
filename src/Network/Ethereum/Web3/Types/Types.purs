@@ -47,10 +47,9 @@ import Prelude
 import Control.Alt (class Alt)
 import Control.Alternative (class Alternative, class Plus, (<|>))
 import Control.Error.Util (hush)
-import Effect.Aff (Aff, Fiber, ParAff, attempt, forkAff, liftEff', message, throwError)
+import Effect.Aff (Aff, Fiber, ParAff, attempt, forkAff, message, throwError)
 import Effect.Aff.Class (class MonadAff, liftAff)
-import Effect (kind Effect)
-import Effect.Class (class MonadEffect)
+import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Exception (Error, throwException)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError)
 import Control.Monad.Except (runExcept)
@@ -75,7 +74,6 @@ import Network.Ethereum.Types (Address, BigNumber, HexString)
 import Network.Ethereum.Web3.Types.EtherUnit (class EtherUnit, NoPay, Value, Wei, convert)
 import Network.Ethereum.Web3.Types.Provider (Provider)
 import Simple.JSON (class ReadForeign, class WriteForeign)
---import Type.Row.Effect.Equality (class EffectRowEquals, effFrom, effTo) as ERE
 
 --------------------------------------------------------------------------------
 -- * Block
@@ -340,26 +338,11 @@ derive newtype instance applyWeb3 :: Apply (Web3 e)
 derive newtype instance applicativeWeb3 :: Applicative (Web3 e)
 derive newtype instance bindWeb3 :: Bind (Web3 e)
 derive newtype instance monadWeb3 :: Monad (Web3 e)
-derive newtype instance monadEffWeb3 :: MonadEff (eth :: ETH | e) (Web3 e)
-derive newtype instance monadAffWeb3 :: MonadAff (eth :: ETH | e) (Web3 e)
 derive newtype instance monadThrowWeb3 :: MonadThrow Error (Web3 e)
 derive newtype instance monadErrorWeb3 :: MonadError Error (Web3 e)
 derive newtype instance monadAskWeb3 :: MonadAsk Provider (Web3 e)
 derive newtype instance monadReaderWeb3 :: MonadReader Provider (Web3 e)
 derive newtype instance monadRecWeb3 :: MonadRec (Web3 e)
-
-instance monadForkWeb3 :: ERE.EffectRowEquals eff (eth :: ETH | eff') => MFork.MonadFork (Fiber eff) (Web3 eff') where
-  suspend = Web3 <<< map ERE.effFrom <<< MFork.suspend <<< unWeb3
-  fork = Web3 <<< map ERE.effFrom <<< MFork.fork <<< unWeb3
-  join = Web3 <<< lift <<< ERE.effTo <<< MFork.join
-
-instance monadKillWeb3 :: ERE.EffectRowEquals eff (eth :: ETH | eff') => MFork.MonadKill Error (Fiber eff) (Web3 eff') where
-  kill e = Web3 <<< ERE.effFrom <<< MFork.kill e <<< ERE.effTo
-
-instance monadBracketWeb3 :: ERE.EffectRowEquals eff (eth :: ETH | eff') => MFork.MonadBracket Error (Fiber eff) (Web3 eff') where
-  bracket acquire release run = Web3 $ MFork.bracket (unWeb3 acquire) (\c a -> unWeb3 (release c a)) (\a -> unWeb3 (run a))
-  uninterruptible = Web3 <<< MFork.uninterruptible <<< unWeb3
-  never = Web3 MFork.never
 
 newtype Web3Par e a = Web3Par (ReaderT Provider (ParAff (eth :: ETH | e)) a)
 
@@ -380,7 +363,7 @@ derive newtype instance plusParWeb3 :: Plus (Web3Par e)
 derive newtype instance alternativeParWeb3 :: Alternative (Web3Par e)
 
 throwWeb3 :: forall e a. Error -> Web3 e a
-throwWeb3 = liftAff <<< liftEff' <<< throwException
+throwWeb3 = liftAff <<< liftEffect <<< throwException
 
 -- | Run an asynchronous `ETH` action
 runWeb3 :: forall e a . Provider -> Web3 e a -> Aff (eth :: ETH | e) (Either Web3Error a)

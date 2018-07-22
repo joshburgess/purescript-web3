@@ -34,7 +34,7 @@ import Text.Parsing.Parser (ParseError, ParseState(..), Parser, runParser)
 import Text.Parsing.Parser.Combinators (lookAhead)
 import Text.Parsing.Parser.Pos (Position(..))
 import Type.Proxy (Proxy(..))
-import Type.Row (class ListToRow, class RowLacks, Cons, Nil, RLProxy(..), kind RowList)
+import Type.Row (class ListToRow, class Lacks, class Cons, Cons, Nil, RLProxy(..), kind RowList)
 
 -- | A class for encoding generically composed datatypes to their abi encoding
 class GenericABIEncode a where
@@ -197,16 +197,16 @@ instance argsToRowListProxyBaseNull :: ArgsToRowListProxy NoArguments Nil where
 instance argsToRowListProxyBase :: ArgsToRowListProxy (Argument (Tagged (SProxy s) a)) (Cons s a Nil) where
   argsToRowListProxy _ = RLProxy
 
-instance argsToRowListProxyInductive :: ArgsToRowListProxy as l => ArgsToRowListProxy (Product (Argument (Tagged (SProxy s) a)) as) (Cons s a l) where
-  argsToRowListProxy _ = RLProxy
+--instance argsToRowListProxyInductive :: ArgsToRowListProxy as l => ArgsToRowListProxy (Product (Argument (Tagged (SProxy s) a)) as) (Cons s a l) where
+--  argsToRowListProxy _ = RLProxy
 
 class ToRecordFields args fields (rowList :: RowList) | args -> rowList, rowList -> args fields where
   toRecordFields :: RLProxy rowList -> args -> Record fields
 
 instance toRecordBase :: 
   ( IsSymbol s
-  , RowCons s a () r
-  , RowLacks s ()
+  , Cons s a () r
+  , Lacks s ()
   ) => ToRecordFields (Argument (Tagged (SProxy s) a)) r (Cons s a Nil)
   where
   toRecordFields _ (Argument a) = Record.insert (SProxy :: SProxy s) (untagged a) {}
@@ -216,8 +216,8 @@ instance toRecordBaseNull :: ToRecordFields NoArguments () Nil where
 
 instance toRecordInductive ::
   ( ToRecordFields as r1 (Cons ls la ll)
-  , RowCons s a r1 r2
-  , RowLacks s r1
+  , Cons s a r1 r2
+  , Lacks s r1
   , IsSymbol s
   , ListToRow (Cons ls la ll) r1
   ) => ToRecordFields (Product (Argument (Tagged (SProxy s) a)) as) r2 (Cons s a (Cons ls la ll)) where
