@@ -3,6 +3,7 @@ module Network.Ethereum.Web3.Types.Types
        , ChainCursor(..)
        , Block(..)
        , Transaction(..)
+       , RawTransactionOptions(..)
        , TransactionReceipt(..)
        , TransactionStatus(..)
        , TransactionOptions(..)
@@ -195,6 +196,26 @@ instance showTransaction :: Show Transaction where
 
 instance decodeTransaction :: Decode Transaction where
   decode x = genericDecode (defaultOptions { unwrapSingleConstructors = true }) x
+
+--------------------------------------------------------------------------------
+-- * RawTransaction
+--------------------------------------------------------------------------------
+
+newtype RawTransactionOptions u =
+  RawTransactionOptions { to :: Maybe Address
+                        , value :: Maybe (Value u)
+                        , gas :: BigNumber
+                        , gasPrice :: BigNumber
+                        , nonce :: BigNumber
+                        }
+
+derive instance genericRawTransactionOptions :: Generic (RawTransactionOptions u) _
+derive instance newtypeRawTransactionOptions :: Newtype (RawTransactionOptions u) _
+derive instance eqRawTransactionOptions :: Eq (RawTransactionOptions u)
+
+instance showRawTransactionOptions :: Show (RawTransactionOptions u) where
+  show = genericShow
+
 
 --------------------------------------------------------------------------------
 -- * TransactionReceipt
